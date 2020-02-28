@@ -12,19 +12,19 @@ cd .../KeckTemperaturePredictor
 sudo pip install -r requirements.txt
 ```
 
-***
+##
+
 ***
 
 # Class : TemperatureModels
 
 A class used to load, predict, and update the trained time-series linear models to predict the temperature on top of Mauna Kea between 5-11pm at night from 4-8 hours before hand.
 
-  ***
 
   Attributes
   ----------
   - models : dict
-  
+
       a dictionary of each of the models to predict at each hour between 4-8 hours ahead.
 
   Methods
@@ -54,14 +54,12 @@ A class used to load, predict, and update the trained time-series linear models 
       this method will write the models to a txt file.
 
 ***
-***
 
 # Class : CreateTrainTest
 
 A class used to clean and parse data into workable machine learning time-series data from a `csv` file that has recorded temperatures of from the Keck I temperature sensor.
   The format of the data should have a columns: `Date`, `UT`, and `OutTemp`.
 
-  ***
 
   Attributes
   ----------
