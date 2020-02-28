@@ -24,6 +24,7 @@ A class used to load, predict, and update the trained time-series linear models 
   Attributes
   ----------
   - models : dict
+  
       a dictionary of each of the models to predict at each hour between 4-8 hours ahead.
 
   Methods
