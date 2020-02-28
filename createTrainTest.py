@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from progressbar import ProgressBar
 from scipy import interpolate
 from sklearn.model_selection import train_test_split
+import zipfile
 
 class CreateTrainTest(object):
     '''
@@ -73,7 +74,11 @@ class CreateTrainTest(object):
         try:
             dataSet = pd.read_csv(self.file)
         except:
-            print('The file \'%s\' does not exist!'%(self.file))
+            try:
+                zf = zipfile.ZipFile(self.file+'.zip')
+                df = pd.read_csv(zf.open(self.file))
+            except:
+                print('The file \'%s\' does not exist!'%(self.file))
 
         if not isinstance(fraction_data, float):
             print('fraction_data needs to be a float between 0 and 1 (not including 0)')
@@ -222,7 +227,7 @@ class CreateTrainTest(object):
             test_size = 7200
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=0, shuffle=False)
-        
+
         self.X_train = np.array(X_train)
         self.X_test = np.array(X_test)
         self.y_train = np.array(y_train)
