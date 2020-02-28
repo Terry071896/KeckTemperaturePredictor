@@ -8,3 +8,4 @@ json=='2.0.9'
 multiprocessing
 csaps=='0.7.0'
 pytest
+zipfile
