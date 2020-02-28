@@ -12,7 +12,20 @@ cd .../KeckTemperaturePredictor
 sudo pip install -r requirements.txt
 ```
 
-##
+## Running/Troubleshooting
+
+To update the models regularly, you are going to want to update `k1_temp_mirror_5min.csv`, `k1_temp_mirror_5min.csv.zip`, or some file that is similar with the columns format of `Date`, `UT`, and `OutTemp`.
+
+To test the functions, run
+```
+cd .../KeckTemperaturePredictor
+pytest
+```
+If you get all the functions to work, then all is good.
+
+When writing a script to do predicting, the class `TemperatureModels` will have what you need. But, be careful of the `predict` and `predict_all` input.  The input has to be a list of temperature values that are 6 minutes apart.  This class does not vet for this so you only have to put in a list of temperatures rather than another list of timestamps.
+
+If you give it a list that does not have temperatures 6 minutes apart and the list length matches the a size required, it will produce a prediction; a WRONG prediction.
 
 ***
 
