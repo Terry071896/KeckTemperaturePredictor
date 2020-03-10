@@ -32,10 +32,12 @@ class TemperatureModels(object):
 
     Methods
     -------
-    predict(x, utc_date = None)
-        this method will choose and predict based off of the observation given 'x'.
-    predict_all(x, utc_date = None)
-        this method will choose all the models that it possibly can to predict based off of the observation given 'x' (if the length is greater than required for some models, it will take the correct amount to predict.)
+    predict(x, utc_date)
+        this method will choose and predict based off of the observation given 'x' and utc timestames 'utc_dates'.
+    predict_all(x, utc_date)
+        this method will choose all the models that it possibly can to predict based off of the observation given 'x' and utc timestames 'utc_dates' (if the length is greater than required for some models, it will take the correct amount to predict.)
+    check_x(x, utc_dates)
+        this method will make sure to correctly interpolate/smooth the temperature data based off of the 'utc_dates' timestamps.
     update(hours_ahead, filename, fraction_data = 1)
         this method updates the correct model, based on more/new data from 'filename'.
     _update(x)
@@ -58,8 +60,73 @@ class TemperatureModels(object):
             json_str = json_file.read()
             self.models[model_name] = json.loads(json_str)
 
-    def predict_all(self, x, utc_date = None):
-        '''this method will choose all the models that it possibly can to predict based off of the observation given 'x'
+    def check_x(self, x, utc_dates):
+        '''this method will make sure to correctly interpolate/smooth the temperature data based off of the 'utc_dates' timestamps.
+
+        Parameters
+        ----------
+        x : list
+            this should be a list of all the temperature values used as predictors.  Each value should be 6 minutes appart and should be 160, 170, 180, 190, or 200 values in length.
+        utc_dates : list
+            this should be a list of the utc timestamp of the temperature value.
+
+        Returns
+        -------
+        list, list
+            Each list should be the lists are the same as the parameters but adjusted to have 6 minute intervals.
+        '''
+        if not isinstance(x, list) or not isinstance(utc_dates, list):
+            flag = True
+            try:
+                doesItWork = x[0]
+            except:
+                print('\'x\' must be a list.')
+                flag = False
+            try:
+                doesItWork = utc_dates[0]
+            except:
+                print('\'utc_dates\' must be a list.')
+                flag = False
+            if not flag:
+                return None, None
+
+
+        if len(x) != len(utc_dates):
+            print('\'x\' and \'utc_dates\' not the same length: %s and %s'%(len(x), len(utc_dates)))
+            return None, None
+
+        if not isinstance(utc_dates[0], datetime):
+            print('\'utc_dates\' needs to be a list of datetime values. Currently, %s'%(type(utc_dates[0])))
+            return None, None
+
+        if not isinstance(x[0], int) or not isinstance(x[0], float):
+            print('\'x\' needs to be a list of int or float values. Currently, %s'%(type(x[0])))
+            return None, None
+
+        dt = np.diff(utc_dates)
+        t = []
+        s = 0
+        for i in dt:
+            t.append(s)
+            s += i.minutes + i.seconds/60
+        t.append(s)
+
+        sp0 = csaps.UnivariateCubicSmoothingSpline(t, x, smooth=0.01)
+        xs0 = np.array(range(int(np.ceil(t[-1]/6))+1))*6
+        x_new = sp0(xs0)
+
+        new_utc_dates = []
+        for six in xs0:
+            temp_date = utc_dates[0] + timedelta(minutes=int(six))
+            new_utc_dates.append(temp_date)
+
+        return x_new, new_utc_dates
+
+
+
+
+    def predict_all(self, x, utc_dates):
+        '''this method will choose and predict based off of the observation given 'x' and utc timestames 'utc_dates'.
         If the length is greater than required for some models, it will take the correct amount to predict.
         For example, if the length of 'x' is 180, then this method will predict for 6, 7, and 8 hours ahead as there is enough information to do so.
 
@@ -67,8 +134,8 @@ class TemperatureModels(object):
         ----------
         x : list
             this should be a list of all the temperature values used as predictors.  Each value should be 6 minutes appart and should be 160, 170, 180, 190, or 200 values in length.
-        utc_date : datetime, optional (default = None)
-            this should be the utc timestamp of the latest temperature value.  If utc_date = None, then it will be reset to the current utc time stamp.
+        utc_dates : list
+            this should be a list of the utc timestamp of the temperature value.
 
         Returns
         -------
@@ -77,9 +144,18 @@ class TemperatureModels(object):
             An empty dictionary will be returned if the time is outside the predictive window.
         '''
 
-        if utc_date is None:
-            utc_date = datetime.utcnow()
         pred_models = {}
+        x, utc_dates = self.check_x(x, utc_dates)
+
+        if x is None or utc_dates is None:
+            print('Input for \'x\' should be list of int or floats.')
+            print('Input for \'utc_dates\' should be a list of datetime values.')
+            print('One or both are wrong')
+            return pred_models
+
+        utc_date = utc_dates[-1]
+
+
         if 3 < utc_date.hour < 18:
             return pred_models
 
@@ -90,22 +166,24 @@ class TemperatureModels(object):
 
             if len(x) >= n_temp_predictors and 3 <= utc_hours_ahead <= 7:
                 x_temp = x[-n_temp_predictors:]
-                pred_models[model_name] = self.predict(x_temp, utc_date)
+                pred_models[model_name] = self.predict(x_temp, utc_date, hours_ahead)
             else:
                 pred_models[model_name] = {}
 
         return pred_models
 
 
-    def predict(self, x, utc_date = None):
-        '''this method will choose and predict based off of the observation given 'x'.
+    def predict(self, x, utc_dates, hours_ahead):
+        '''this method will choose and predict based off of the observation given 'x' and utc timestames 'utc_dates'.
 
         Parameters
         ----------
         x : list
             this should be a list of all the temperature values used as predictors.  Each value should be 6 minutes appart and should be 160, 170, 180, 190, or 200 values in length.
-        utc_date : datetime, optional (default = None)
-            this should be the utc timestamp of the latest temperature value.  If utc_date = None, then it will be reset to the current utc time stamp.
+        utc_date : list
+            this should be a list of utc timestamps of the temperature value.
+        hours_ahead : int
+            this should be the number of hours ahead you are trying to predict. Only ints between 4-8 are acceptable.
 
         Returns
         -------
@@ -114,30 +192,38 @@ class TemperatureModels(object):
             An empty dictionary will be returned if the time is outside the predictive window.
         '''
 
-        if utc_date is None:
-            utc_date = datetime.utcnow()
-
         pred_model = {'pred_val':None,
             '68_conf_interval':None,
             '95_conf_interval':None}
 
-        hours_ahead = 24-len(x)/10
+        if hours_ahead not in [4, 5, 6, 7, 8]:
+            print('\'hours_ahead\' needs to be an int 4-8 only.')
+            return pred_model
+
+        if isinstance(utc_dates, datetime):
+            utc_date = utc_dates
+        else:
+            x, utc_dates = self.check_x(x, utc_dates)
+            if x is None or utc_dates is None:
+                print('Input for \'x\' should be list of int or floats.')
+                print('Input for \'utc_dates\' should be a list of datetime values.')
+                print('One or both are wrong')
+                return pred_model
+            else:
+                utc_date = utc_dates[-1]
+
+
         utc_hours_ahead = (utc_date.hour+hours_ahead)%23
 
         model_name = '%sh_coef_linear_model'%(int(hours_ahead))
 
-        if hours_ahead == int(hours_ahead):
-            n_time_predictors = len(self.models[model_name]['coef'])-4
+        if (240-hours_ahead*10) <= len(x):
+            n_time_predictors = 240-hours_ahead*10
         else:
-            print('Size of \'x\' is not correct for prediction: %s'%(len(x)))
+            print('Size of \'x\' is not big enough for prediction: %s'%(len(x)))
             return pred_model
 
         if len(x) == n_time_predictors and 3 <= utc_hours_ahead <= 7:
-            t = np.array(range(len(x)))*6
-            sp0 = csaps.UnivariateCubicSmoothingSpline(t, x, smooth=0.01)
-            xs0 = np.linspace(t[0], t[-1], n_time_predictors)
-            x = sp0(xs0)
-
             x = np.append(x, utc_date.month)
             x = np.append(x, utc_date.day)
             x = np.append(x, utc_hours_ahead)
@@ -226,7 +312,7 @@ class TemperatureModels(object):
 
     def save(self):
         '''this method will write the models to a txt file.'''
-        
+
         for model_name in self.models.keys():
             json_txt = json.dumps(self.models[model_name], indent=4)
             with open(model_name+'.txt', 'w') as file:
