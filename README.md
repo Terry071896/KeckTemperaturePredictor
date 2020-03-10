@@ -42,13 +42,18 @@ A class used to load, predict, and update the trained time-series linear models 
 
   Methods
   -------
-  - **predict(x, utc_date = None)**
+  - **predict(x, utc_dates)**
 
-      this method will choose and predict based off of the observation given 'x'.
+      this method will choose and predict based off of the observation given 'x' and utc timestames 'utc_dates'.
 
-  - **predict_all(x, utc_date = None)**
+  - **predict_all(x, utc_dates)**
 
-      this method will choose all the models that it possibly can to predict based off of the observation given 'x' (if the length is greater than required for some models, it will take the correct amount to predict.)
+      this method will choose all the models that it possibly can to predict based off of the observation given 'x' and utc timestames 'utc_dates' (if the length is greater than required for some models, it will take the correct amount to predict.)
+
+  - **check_x(x, utc_dates)**
+
+      this method will make sure to correctly interpolate/smooth the temperature data based off of the 'utc_dates' timestamps.
+
 
   - **update(hours_ahead, filename, fraction_data = 1)**
 
