@@ -99,8 +99,8 @@ class TemperatureModels(object):
             print('\'utc_dates\' needs to be a list of datetime values. Currently, %s'%(type(utc_dates[0])))
             return None, None
 
-        if not isinstance(x[0], int) or not isinstance(x[0], float):
-            print('\'x\' needs to be a list of int or float values. Currently, %s'%(type(x[0])))
+        if not isinstance(x[0], int):
+            print('\'x\' needs to be a list of int values. Currently, %s'%(type(x[0])))
             return None, None
 
         dt = np.diff(utc_dates)
@@ -108,7 +108,7 @@ class TemperatureModels(object):
         s = 0
         for i in dt:
             t.append(s)
-            s += i.minutes + i.seconds/60
+            s += i.seconds/60
         t.append(s)
 
         sp0 = csaps.UnivariateCubicSmoothingSpline(t, x, smooth=0.01)
@@ -180,8 +180,8 @@ class TemperatureModels(object):
         ----------
         x : list
             this should be a list of all the temperature values used as predictors.  Each value should be 6 minutes appart and should be 160, 170, 180, 190, or 200 values in length.
-        utc_date : list
-            this should be a list of utc timestamps of the temperature value.
+        utc_date : list or datetime
+            this should be a list of utc timestamps of the temperature value.  If this is type datetime, then it should be called from the predict_all function.
         hours_ahead : int
             this should be the number of hours ahead you are trying to predict. Only ints between 4-8 are acceptable.
 
@@ -223,7 +223,8 @@ class TemperatureModels(object):
             print('Size of \'x\' is not big enough for prediction: %s'%(len(x)))
             return pred_model
 
-        if len(x) == n_time_predictors and 3 <= utc_hours_ahead <= 7:
+        if 3 <= utc_hours_ahead <= 7:
+            x = x[-n_time_predictors:]
             x = np.append(x, utc_date.month)
             x = np.append(x, utc_date.day)
             x = np.append(x, utc_hours_ahead)

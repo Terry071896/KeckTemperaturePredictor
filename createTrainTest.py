@@ -76,7 +76,7 @@ class CreateTrainTest(object):
         except:
             try:
                 zf = zipfile.ZipFile(self.file+'.zip')
-                df = pd.read_csv(zf.open(self.file))
+                dataSet = pd.read_csv(zf.open(self.file))
             except:
                 print('The file \'%s\' does not exist!'%(self.file))
 

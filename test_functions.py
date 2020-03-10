@@ -23,7 +23,12 @@ def test_predict_date_out():
     date_time_str = '2018-06-29 08:11:11.11111'
     date_time_obj = datetime.datetime.strptime(date_time_str, '%Y-%m-%d %H:%M:%S.%f')
     x = [0]*200
-    should_be_none = models.predict(x, date_time_obj)['pred_val']
+    utc_dates = [None]*len(x)
+    utc_dates[-1] = date_time_obj
+    for i in range(1,len(x)):
+        temp = utc_dates[-i] - datetime.timedelta(minutes=6)
+        utc_dates[-(i+1)] = temp
+    should_be_none = models.predict(x, utc_dates, 4)['pred_val']
 
     print('\nFinished test_predict_date_out')
     assert should_be_none is None
@@ -34,7 +39,12 @@ def test_predict_date_in():
     date_time_str = '2018-06-29 23:11:11.11111'
     date_time_obj = datetime.datetime.strptime(date_time_str, '%Y-%m-%d %H:%M:%S.%f')
     x = [0]*200
-    should_be_float = models.predict(x, date_time_obj)['pred_val']
+    utc_dates = [None]*len(x)
+    utc_dates[-1] = date_time_obj
+    for i in range(1,len(x)):
+        temp = utc_dates[-i] - datetime.timedelta(minutes=6)
+        utc_dates[-(i+1)] = temp
+    should_be_float = models.predict(x, utc_dates, 4)['pred_val']
     print(should_be_float, type(should_be_float))
     print('\nFinished test_predict_date_in')
     assert isinstance(should_be_float, float)
@@ -44,8 +54,13 @@ def test_predict_x_wrong():
     models = TemperatureModels()
     date_time_str = '2018-06-29 23:11:11.11111'
     date_time_obj = datetime.datetime.strptime(date_time_str, '%Y-%m-%d %H:%M:%S.%f')
-    x = [0]*201
-    should_be_none = models.predict(x, date_time_obj)['pred_val']
+    x = [0]*2
+    utc_dates = [None]*len(x)
+    utc_dates[-1] = date_time_obj
+    for i in range(1,len(x)):
+        temp = utc_dates[-i] - datetime.timedelta(minutes=6)
+        utc_dates[-(i+1)] = temp
+    should_be_none = models.predict(x, utc_dates, 4)['pred_val']
 
     print('\nFinished test_predict_x_wrong')
     assert should_be_none is None
@@ -56,7 +71,12 @@ def test_predict_all_date_out():
     date_time_str = '2018-06-29 08:11:11.11111'
     date_time_obj = datetime.datetime.strptime(date_time_str, '%Y-%m-%d %H:%M:%S.%f')
     x = [0]*200
-    should_be_empty_dict = models.predict_all(x, date_time_obj)
+    utc_dates = [None]*len(x)
+    utc_dates[-1] = date_time_obj
+    for i in range(1,len(x)):
+        temp = utc_dates[-i] - datetime.timedelta(minutes=6)
+        utc_dates[-(i+1)] = temp
+    should_be_empty_dict = models.predict_all(x, utc_dates)
 
     print('\nFinished test_predict_all_date_out')
     assert should_be_empty_dict == {}
@@ -67,7 +87,12 @@ def test_predict_all_date_in():
     date_time_str = '2018-06-29 23:11:11.11111'
     date_time_obj = datetime.datetime.strptime(date_time_str, '%Y-%m-%d %H:%M:%S.%f')
     x = [0]*200
-    should_be_dict = models.predict_all(x, date_time_obj)
+    utc_dates = [None]*len(x)
+    utc_dates[-1] = date_time_obj
+    for i in range(1,len(x)):
+        temp = utc_dates[-i] - datetime.timedelta(minutes=6)
+        utc_dates[-(i+1)] = temp
+    should_be_dict = models.predict_all(x, utc_dates)
     if isinstance(should_be_dict, dict) and len(list(should_be_dict.keys())) == 5:
         flag = True
     else:
